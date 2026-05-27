@@ -8,12 +8,17 @@ BIN="$APP_ROOT/abcd"
 INSTALLER_DIR="$HOME/serv00-abcd"
 SOURCE_REPO="${ABCD_SOURCE_REPO:-https://github.com/tamd258/alist.git}"
 WEB_DIST_URL="${ABCD_WEB_DIST_URL:-https://github.com/AlistGo/alist-web/releases/latest/download/dist.tar.gz}"
-DEFAULT_ADMIN_PASSWORD="${ABCD_ADMIN_PASSWORD:-Abcd123!}"
+DEFAULT_ADMIN_PASSWORD="${ABCD_ADMIN_PASSWORD:-}"
 RAW_BASE="${ABCD_RAW_BASE:-https://raw.githubusercontent.com/tamd258/serv00-play/main}"
 red(){ printf '\033[0;91m%s\033[0m\n' "$1"; }
 green(){ printf '\033[0;92m%s\033[0m\n' "$1"; }
 yellow(){ printf '\033[0;33m%s\033[0m\n' "$1"; }
 need(){ command -v "$1" >/dev/null 2>&1 || { red "缺少命令: $1"; exit 1; }; }
+random_password(){
+  if [ -n "$DEFAULT_ADMIN_PASSWORD" ]; then printf '%s' "$DEFAULT_ADMIN_PASSWORD"; return; fi
+  if command -v openssl >/dev/null 2>&1; then openssl rand -base64 18 | tr -d '/+=' | cut -c1-18; return; fi
+  date +%s | sha256 | cut -c1-18
+}
 ensure_binexec(){ devil binexec on >/dev/null 2>&1 || true; }
 reserve_port(){
   if [ -f "$APP_ROOT/port" ]; then cat "$APP_ROOT/port"; return; fi
@@ -82,6 +87,18 @@ build_abcd(){
   go build -o "$BIN" -tags=jsoniter .
   chmod +x "$BIN"
 }
+clean_data_if_requested(){
+  if [ -d "$DATA_DIR" ]; then
+    if [ "${ABCD_KEEP_DATA:-}" = "1" ]; then
+      yellow "保留已有数据目录: $DATA_DIR"
+      return
+    fi
+    backup="$APP_ROOT/data.backup.$(date +%Y%m%d%H%M%S)"
+    mv "$DATA_DIR" "$backup"
+    yellow "已备份并清空旧数据: $backup"
+  fi
+  mkdir -p "$DATA_DIR"
+}
 set_port_config(){
   port="$1"
   mkdir -p "$DATA_DIR"
@@ -120,8 +137,10 @@ install_all(){
   ensure_binexec
   port="$(reserve_port)"
   build_abcd
+  clean_data_if_requested
+  admin_pass="$(random_password)"
   set_port_config "$port"
-  reset_password "$DEFAULT_ADMIN_PASSWORD"
+  reset_password "$admin_pass"
   make_proxy_domain "$port"
   start_abcd
   install_keepalive
@@ -153,7 +172,7 @@ menu(){
       1) install_all ;;
       2) start_abcd ;;
       3) stop_abcd ;;
-      4) printf "新密码 [Abcd123!]: "; read p || true; reset_password "${p:-Abcd123!}" ;;
+      4) printf "新密码（留空则随机生成）: "; read p || true; reset_password "${p:-$(random_password)}" ;;
       5) build_abcd; stop_abcd; start_abcd ;;
       6) install_keepalive ;;
       0) exit 0 ;;

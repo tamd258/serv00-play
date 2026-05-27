@@ -12,7 +12,7 @@
 
 ## 快捷安装
 
-如果你把本目录推到 GitHub 的 `tamd258/serv00-play` 仓库后，可在 serv00 执行：
+在 serv00 执行：
 
 ```sh
 bash <(curl -Ls https://raw.githubusercontent.com/tamd258/serv00-play/main/start.sh) --install
@@ -38,7 +38,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/tamd258/serv00-play/main/start
 - 源码目录：`~/abcd/src`
 - 数据目录：`~/abcd/data`
 - 默认管理员账号：`admin`
-- 默认管理员密码：`Abcd123!`
+- 默认管理员密码：安装时随机生成并显示；也可用 `ABCD_ADMIN_PASSWORD` 指定
 
 安装时会询问域名前缀：
 
@@ -50,7 +50,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/tamd258/serv00-play/main/start
 可选：
 
 ```sh
-ABCD_ADMIN_PASSWORD='你的密码'
+ABCD_ADMIN_PASSWORD='你的密码'        # 不设置则随机生成
+ABCD_KEEP_DATA=1                    # 可选：重装时保留旧 data 目录；默认会备份并清空旧数据
 ABCD_SOURCE_REPO='https://github.com/tamd258/alist.git'
 ABCD_WEB_DIST_URL='https://github.com/AlistGo/alist-web/releases/latest/download/dist.tar.gz'
 ```
@@ -58,7 +59,18 @@ ABCD_WEB_DIST_URL='https://github.com/AlistGo/alist-web/releases/latest/download
 例如：
 
 ```sh
-ABCD_ADMIN_PASSWORD='abc123456' bash <(curl -Ls https://raw.githubusercontent.com/tamd258/serv00-play/main/start.sh) --install-abcd
+ABCD_ADMIN_PASSWORD='你的强密码' bash <(curl -Ls https://raw.githubusercontent.com/tamd258/serv00-play/main/start.sh) --install-abcd
+```
+
+
+## 隐私说明
+
+安装器不会内置、下载或写入任何网盘账号、cookie、token、存储配置或数据库。
+
+如果你在同一个 serv00 账号上重装，旧的 `~/abcd/data` 里可能已经有你之前添加过的存储。默认安装会把旧数据备份到 `~/abcd/data.backup.时间戳` 并创建全新空数据目录；如果你确实想保留旧数据，请设置：
+
+```sh
+ABCD_KEEP_DATA=1 bash <(curl -Ls https://raw.githubusercontent.com/tamd258/serv00-play/main/start.sh) --install-abcd
 ```
 
 ## 保活
